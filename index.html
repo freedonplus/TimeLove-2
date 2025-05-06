@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>心路历程</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+   <div id="headNav">
+           <div id="head" class="clickable-title">心路历程 - 青春篇</div>
+       </div>
+       
+       <div id="buttonNav">
+           <button id="toggleAll">全部展开</button>
+           <button id="changeTheme">切换主题</button>
+       </div>
+       
+       <div id="timelineContainer"></div>
+       <div id="seasonEffectsContainer"></div>
+       <div id="musicPlayer">🎵</div>
+   
+       <!-- 烟花效果容器 -->
+       <div id="fireworksContainer"></div>
+       
+       <!-- 设置面板 -->
+       <div id="settingsPanel">
+           <div class="settings-header">
+               <h3>效果设置</h3>
+               <button id="closeSettings">×</button>
+           </div>
+           <div class="settings-content">
+               <div class="setting-group">
+                   <h4>四季效果</h4>
+                   <label>
+                       粒子大小: 
+                       <input type="range" id="seasonParticleSize" min="5" max="30" value="15">
+                   </label>
+                   <label>
+                       粒子密度: 
+                       <input type="range" id="seasonParticleDensity" min="50" max="300" value="150">
+                   </label>
+                   <label>
+                       下落速度: 
+                       <input type="range" id="seasonParticleSpeed" min="1" max="10" value="5">
+                   </label>
+               </div>
+               <div class="setting-group">
+                   <h4>烟花效果</h4>
+                   <label>
+                       烟花大小: 
+                       <input type="range" id="fireworkSize" min="50" max="200" value="100">
+                   </label>
+                   <label>
+                       烟花数量: 
+                       <input type="range" id="fireworkCount" min="5" max="50" value="20">
+                   </label>
+                   <label>
+                       爆炸粒子数: 
+                       <input type="range" id="fireworkParticles" min="10" max="100" value="30">
+                   </label>
+               </div>
+               <div class="setting-group">
+                   <h4>内容主题</h4>
+                   <div class="theme-buttons">
+                       <button id="themeEmotion" class="theme-btn active">情感</button>
+                       <button id="themeFriendship" class="theme-btn">友谊</button>
+                       <button id="themeCareer" class="theme-btn">事业</button>
+                       <button id="themeFamily" class="theme-btn">亲情</button>
+                   </div>
+               </div>
+               <div class="setting-group">
+                   <h4>主题</h4>
+                   <button id="toggleDarkMode">切换暗色模式</button>
+                   <button id="toggleSeason">切换季节</button>
+               </div>
+           </div>
+       </div>
+       
+       <!-- 设置按钮 -->
+       <button id="settingsButton">⚙️</button>
+
+    <script src="js/index.js"></script>
+</body>
+</html>
