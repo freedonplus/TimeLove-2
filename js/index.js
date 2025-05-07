@@ -157,6 +157,7 @@ const themeData = {
 const timelineContainer = document.getElementById('timelineContainer');
 const toggleAllBtn = document.getElementById('toggleAll');
 const changeThemeBtn = document.getElementById('changeTheme');
+const launchFireworksBtn = document.getElementById('launchFireworks');
 const titleElement = document.getElementById('head');
 const seasonEffectsContainer = document.getElementById('seasonEffectsContainer');
 const musicPlayer = document.getElementById('musicPlayer');
@@ -164,6 +165,7 @@ const fireworksContainer = document.getElementById('fireworksContainer');
 const settingsPanel = document.getElementById('settingsPanel');
 const settingsButton = document.getElementById('settingsButton');
 const closeSettings = document.getElementById('closeSettings');
+const loadingOverlay = document.getElementById('loadingOverlay');
 const bodyElement = document.body;
 
 // 设置控件
@@ -195,7 +197,8 @@ const seasons = [
         animation: "fall",
         bgColor: "#e6f2ff",
         themeColor: "#4d79ff",
-        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        maxParticles: 150
     },
     {
         name: "spring",
@@ -208,7 +211,8 @@ const seasons = [
         animation: "fallWithTwist",
         bgColor: "#fff5f7",
         themeColor: "#ff66b2",
-        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        maxParticles: 100
     },
     {
         name: "summer",
@@ -221,7 +225,8 @@ const seasons = [
         animation: "fallFast",
         bgColor: "#f0fff0",
         themeColor: "#00a8ff",
-        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        maxParticles: 200
     },
     {
         name: "autumn",
@@ -234,7 +239,8 @@ const seasons = [
         animation: "fallWithDrift",
         bgColor: "#fff8f0",
         themeColor: "#ff9900",
-        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+        music: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+        maxParticles: 80
     }
 ];
 
@@ -247,6 +253,11 @@ let audio = new Audio(seasons[currentSeasonIndex].music);
 let fireworksInterval = null;
 let isFireworksActive = false;
 let currentTheme = 'emotion';
+let lastAnimationTime = 0;
+let activeParticles = 0;
+let animationFrameId = null;
+let activeFireworks = 0;
+const maxActiveFireworks = 5; // 同时最多5个烟花
 
 // 效果参数
 let currentSeasonParams = {
@@ -261,56 +272,91 @@ let currentFireworkParams = {
     particles: 30
 };
 
+// 烟花声音效果
+const fireworkSounds = [
+    "https://assets.mixkit.co/sfx/preview/mixkit-firework-explosion-1681.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-firework-explosion-1682.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-firework-explosion-1683.mp3"
+];
+
+// 显示加载动画
+function showLoading() {
+    loadingOverlay.classList.add('active');
+    bodyElement.style.opacity = '0.5';
+    bodyElement.style.pointerEvents = 'none';
+}
+
+// 隐藏加载动画
+function hideLoading() {
+    setTimeout(() => {
+        loadingOverlay.classList.remove('active');
+        bodyElement.style.opacity = '1';
+        bodyElement.style.pointerEvents = 'auto';
+    }, 500);
+}
+
 // 渲染时间轴
 function renderTimeline(data) {
-    timelineContainer.innerHTML = '';
-    data.forEach((item, index) => {
-        const timelineItem = document.createElement('div');
-        timelineItem.className = 'timeline-item';
-        timelineItem.innerHTML = `
-            <div class="timeline-dot"></div>
-            <div class="timeline-content collapsed">
-                <div class="timeline-date">${item.date}</div>
-                <div class="timeline-title">${item.title}</div>
-                <div class="timeline-description">${item.description}</div>
-            </div>
-        `;
-        timelineContainer.appendChild(timelineItem);
-    });
-
-    toggleAllBtn.textContent = "全部展开";
-
-    document.querySelectorAll('.timeline-content').forEach(content => {
-        content.addEventListener('click', function() {
-            this.classList.toggle('collapsed');
+    showLoading();
+    
+    setTimeout(() => {
+        timelineContainer.innerHTML = '';
+        data.forEach((item, index) => {
+            const timelineItem = document.createElement('div');
+            timelineItem.className = 'timeline-item';
+            timelineItem.innerHTML = `
+                <div class="timeline-dot"></div>
+                <div class="timeline-content collapsed">
+                    <div class="timeline-date">${item.date}</div>
+                    <div class="timeline-title">${item.title}</div>
+                    <div class="timeline-description">${item.description}</div>
+                </div>
+            `;
+            timelineContainer.appendChild(timelineItem);
         });
-    });
 
-    // 添加动画效果
-    document.querySelectorAll('.timeline-item').forEach((item, index) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`;
-        
-        setTimeout(() => {
-            item.style.opacity = '1';
-            item.style.transform = 'translateY(0)';
-        }, 100);
-    });
+        toggleAllBtn.textContent = "全部展开";
+
+        document.querySelectorAll('.timeline-content').forEach(content => {
+            content.addEventListener('click', function() {
+                this.classList.toggle('collapsed');
+            });
+        });
+
+        // 添加动画效果
+        document.querySelectorAll('.timeline-item').forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(20px)';
+            item.style.transition = `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`;
+            
+            setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+            }, 100);
+        });
+
+        hideLoading();
+    }, 300);
 }
 
 // 切换主题
 function switchTheme(theme) {
-    currentTheme = theme;
+    showLoading();
     
-    // 更新按钮状态
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(`theme${theme.charAt(0).toUpperCase() + theme.slice(1)}`).classList.add('active');
-    
-    // 根据选择的主题渲染时间轴
-    renderTimeline(themeData[theme]);
+    setTimeout(() => {
+        currentTheme = theme;
+        
+        // 更新按钮状态
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`theme${theme.charAt(0).toUpperCase() + theme.slice(1)}`).classList.add('active');
+        
+        // 根据选择的主题渲染时间轴
+        renderTimeline(themeData[theme]);
+        
+        hideLoading();
+    }, 300);
 }
 
 // 创建季节效果
@@ -340,73 +386,141 @@ function createSeasonEffect(season) {
     
     // 计算粒子间隔时间（基于密度）
     const interval = Math.max(10, 300 - currentSeasonParams.density);
+    const maxParticles = season.maxParticles || 100;
     
-    seasonInterval = setInterval(() => {
-        const particle = document.createElement('div');
-        particle.className = `season-particle ${season.className}`;
-        particle.innerHTML = season.particle;
-        particle.style.color = season.color;
-        particle.style.left = Math.random() * 100 + 'vw';
-        particle.style.top = '-20px';
+    let lastParticleTime = 0;
+    
+    function animateParticles(timestamp) {
+        if (!lastParticleTime) lastParticleTime = timestamp;
+        const elapsed = timestamp - lastParticleTime;
         
-        // 应用大小设置
-        const size = currentSeasonParams.size * (0.8 + Math.random() * 0.4);
-        particle.style.fontSize = size + 'px';
-        
-        // 应用速度设置
-        const speed = currentSeasonParams.speed * (0.8 + Math.random() * 0.4);
-        
-        if(season.name === "winter") {
-            particle.style.opacity = Math.random() * 0.7 + 0.3;
-            particle.style.transform = `rotate(${Math.random() * 360}deg)`;
-        } else {
-            particle.style.opacity = Math.random() * 0.5 + 0.5;
+        // 控制粒子生成频率
+        if (elapsed > interval && activeParticles < maxParticles) {
+            lastParticleTime = timestamp;
+            
+            const particle = document.createElement('div');
+            particle.className = `season-particle ${season.className}`;
+            particle.innerHTML = season.particle;
+            particle.style.color = season.color;
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = '-20px';
+            
+            // 应用大小设置
+            const size = currentSeasonParams.size * (0.8 + Math.random() * 0.4);
+            particle.style.fontSize = size + 'px';
+            
+            // 应用速度设置
+            const speed = currentSeasonParams.speed * (0.8 + Math.random() * 0.4);
+            
+            if(season.name === "winter") {
+                particle.style.opacity = Math.random() * 0.7 + 0.3;
+                particle.style.transform = `rotate(${Math.random() * 360}deg)`;
+            } else {
+                particle.style.opacity = Math.random() * 0.5 + 0.5;
+            }
+            
+            particle.style.animation = `${season.animation} ${speed}s linear forwards`;
+            seasonEffectsContainer.appendChild(particle);
+            activeParticles++;
+            
+            setTimeout(() => {
+                particle.remove();
+                activeParticles--;
+            }, speed * 1000 + 1000);
         }
         
-        particle.style.animation = `${season.animation} ${speed}s linear forwards`;
-        seasonEffectsContainer.appendChild(particle);
-        
-        setTimeout(() => {
-            particle.remove();
-        }, speed * 1000 + 1000);
-    }, interval);
+        animationFrameId = requestAnimationFrame(animateParticles);
+    }
+    
+    animationFrameId = requestAnimationFrame(animateParticles);
 }
 
 // 清除季节效果
 function clearSeasonEffect() {
-    if (seasonInterval) {
-        clearInterval(seasonInterval);
-        seasonInterval = null;
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
     }
     seasonEffectsContainer.innerHTML = '';
+    activeParticles = 0;
 }
 
-// 创建烟花效果
-function createFirework(x, y) {
+// 创建单个烟花效果
+function createSingleFirework() {
+    if (activeFireworks >= maxActiveFireworks) return;
+    
+    activeFireworks++;
+    
+    // 随机选择底部位置
+    const startX = Math.random() * window.innerWidth;
+    const startY = window.innerHeight;
+    
+    // 创建烟花主体
     const firework = document.createElement('div');
     firework.className = 'firework';
-    firework.style.left = x + 'px';
-    firework.style.top = y + 'px';
-    firework.style.width = currentFireworkParams.size / 10 + 'px';
-    firework.style.height = currentFireworkParams.size / 10 + 'px';
+    firework.style.left = startX + 'px';
+    firework.style.top = startY + 'px';
+    firework.style.width = currentFireworkParams.size / 20 + 'px';
+    firework.style.height = currentFireworkParams.size / 20 + 'px';
+    firework.style.backgroundColor = getRandomColor();
     fireworksContainer.appendChild(firework);
     
-    // 创建爆炸粒子
-    const particleCount = currentFireworkParams.particles;
-    for (let i = 0; i < particleCount; i++) {
+    // 创建拖尾效果
+    const trailInterval = setInterval(() => {
+        if (parseInt(firework.style.top) < window.innerHeight * 0.3) {
+            clearInterval(trailInterval);
+            return;
+        }
+        
+        const trail = document.createElement('div');
+        trail.className = 'firework-trail';
+        trail.style.left = firework.style.left;
+        trail.style.top = firework.style.top;
+        trail.style.backgroundColor = firework.style.backgroundColor;
+        fireworksContainer.appendChild(trail);
+        
+        // 拖尾淡出效果
         setTimeout(() => {
+            trail.style.transition = 'opacity 0.5s ease-out';
+            trail.style.opacity = '0';
+            setTimeout(() => trail.remove(), 500);
+        }, 100);
+    }, 50);
+    
+    // 烟花上升动画
+    const riseDuration = 1 + Math.random() * 0.5;
+    firework.style.transition = `top ${riseDuration}s ease-out`;
+    
+    setTimeout(() => {
+        firework.style.top = (window.innerHeight * 0.3) + 'px';
+    }, 10);
+    
+    // 爆炸效果
+    setTimeout(() => {
+        // 移除烟花主体
+        firework.style.transition = 'opacity 0.2s ease-out';
+        firework.style.opacity = '0';
+        setTimeout(() => firework.remove(), 200);
+        
+        // 播放爆炸声音
+        playFireworkSound();
+        
+        // 创建爆炸粒子
+        const particleCount = currentFireworkParams.particles;
+        const explosionCenterX = parseInt(firework.style.left);
+        const explosionCenterY = parseInt(firework.style.top);
+        
+        for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'firework-particle';
-            particle.style.left = x + 'px';
-            particle.style.top = y + 'px';
+            particle.style.left = explosionCenterX + 'px';
+            particle.style.top = explosionCenterY + 'px';
             
             // 随机颜色
-            const colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            particle.style.backgroundColor = color;
+            particle.style.backgroundColor = getRandomColor();
             
             // 随机大小
-            const size = Math.random() * 8 + 4;
+            const size = Math.random() * 6 + 3;
             particle.style.width = size + 'px';
             particle.style.height = size + 'px';
             
@@ -415,41 +529,68 @@ function createFirework(x, y) {
             const distance = Math.random() * currentFireworkParams.size + currentFireworkParams.size/2;
             const duration = Math.random() * 1 + 0.5;
             
-            particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
-            particle.style.opacity = '1';
-            particle.style.transition = `all ${duration}s ease-out`;
+            // 使用CSS变量传递随机值
+            particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+            particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
             
+            particle.style.opacity = '1';
+            particle.style.animation = `fireworkParticle ${duration}s ease-out forwards`;
             fireworksContainer.appendChild(particle);
             
             // 移除粒子
             setTimeout(() => {
-                particle.style.opacity = '0';
-                setTimeout(() => {
-                    particle.remove();
-                }, duration * 1000);
-            }, 10);
-        }, Math.random() * 200);
-    }
+                particle.remove();
+            }, duration * 1000);
+        }
+        
+        activeFireworks--;
+    }, riseDuration * 1000);
+}
+
+// 播放烟花声音
+function playFireworkSound() {
+    if (!isMusicPlaying) return;
     
-    // 移除烟花
-    setTimeout(() => {
-        firework.remove();
-    }, 1000);
+    const soundIndex = Math.floor(Math.random() * fireworkSounds.length);
+    const sound = new Audio(fireworkSounds[soundIndex]);
+    sound.volume = 0.3; // 降低音量避免太吵
+    sound.play().catch(e => console.log("无法播放声音:", e));
+}
+
+// 获取随机颜色
+function getRandomColor() {
+    const colors = [
+        '#ff0000', '#ff6600', '#ffcc00', 
+        '#00ff00', '#00ccff', '#0066ff', 
+        '#cc00ff', '#ff00cc', '#ffffff'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
 }
 
 // 开始烟花表演
 function startFireworks() {
-    // 清除之前的季节效果
-    clearSeasonEffect();
-    isFireworksActive = true;
+    if (isFireworksActive) return;
     
-    // 创建烟花
-    const interval = Math.max(50, 1000 - currentFireworkParams.count * 15);
-    fireworksInterval = setInterval(() => {
-        const x = Math.random() * window.innerWidth;
-        const y = Math.random() * window.innerHeight / 2;
-        createFirework(x, y);
-    }, interval);
+    showLoading();
+    
+    setTimeout(() => {
+        isFireworksActive = true;
+        const interval = Math.max(100, 1500 - currentFireworkParams.count * 20);
+        
+        // 初始烟花
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => createSingleFirework(), i * 300);
+        }
+        
+        // 持续发射烟花
+        fireworksInterval = setInterval(() => {
+            if (isFireworksActive) {
+                createSingleFirework();
+            }
+        }, interval);
+        
+        hideLoading();
+    }, 300);
 }
 
 // 停止烟花
@@ -460,14 +601,21 @@ function stopFireworks() {
     }
     isFireworksActive = false;
     fireworksContainer.innerHTML = '';
+    activeFireworks = 0;
 }
 
 // 切换季节
 function toggleSeason() {
-    currentSeasonIndex = (currentSeasonIndex + 1) % seasons.length;
-    const season = seasons[currentSeasonIndex];
-    titleElement.textContent = `心路历程 - ${season.displayName}`;
-    createSeasonEffect(season);
+    showLoading();
+    
+    setTimeout(() => {
+        currentSeasonIndex = (currentSeasonIndex + 1) % seasons.length;
+        const season = seasons[currentSeasonIndex];
+        titleElement.textContent = `心路历程 - ${season.displayName}`;
+        createSeasonEffect(season);
+        
+        hideLoading();
+    }, 300);
 }
 
 // 切换暗色/亮色模式
@@ -483,7 +631,7 @@ function toggleMusic() {
         audio.pause();
         musicPlayer.textContent = "🎵";
     } else {
-        audio.play();
+        audio.play().catch(e => console.log("无法播放音乐:", e));
         musicPlayer.textContent = "🔊";
     }
     isMusicPlaying = !isMusicPlaying;
@@ -491,18 +639,14 @@ function toggleMusic() {
 
 // 切换主题效果
 function toggleThemeEffect() {
-    // 切换暗色模式
-    toggleDarkMode();
+    showLoading();
     
-    // 切换视觉效果
-    if (!isFireworksActive) {
-        startFireworks();
-        changeThemeBtn.textContent = "返回季节";
-    } else {
-        stopFireworks();
-        createSeasonEffect(seasons[currentSeasonIndex]);
-        changeThemeBtn.textContent = "切换主题";
-    }
+    setTimeout(() => {
+        // 切换暗色模式
+        toggleDarkMode();
+        
+        hideLoading();
+    }, 300);
 }
 
 // 更新季节参数
@@ -525,16 +669,12 @@ function updateFireworkParams() {
         count: parseInt(fireworkCount.value),
         particles: parseInt(fireworkParticles.value)
     };
-    
-    if (isFireworksActive) {
-        stopFireworks();
-        startFireworks();
-    }
 }
 
 // 事件监听
 titleElement.addEventListener('click', toggleSeason);
 changeThemeBtn.addEventListener('click', toggleThemeEffect);
+launchFireworksBtn.addEventListener('click', startFireworks);
 musicPlayer.addEventListener('click', toggleMusic);
 settingsButton.addEventListener('click', () => {
     settingsPanel.classList.toggle('show');
