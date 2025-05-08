@@ -373,7 +373,7 @@ body.dark-mode .timeline-item::before {
     background-color: #ff88c2;
 }
 
-/* 加载遮罩 */
+/* 修改加载遮罩样式 */
 #loadingOverlay {
     position: fixed;
     top: 0;
@@ -385,6 +385,25 @@ body.dark-mode .timeline-item::before {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    /* 新增居中属性 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 新增加载动画样式 */
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #ff66b2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 #loadingOverlay.active {
@@ -640,3 +659,35 @@ body.dark-mode #settingsButton {
         opacity: 0;
     }
 }
+
+/* 新增的iframe样式 */
+.iframe-container {
+    margin: 20px auto;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.iframe-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 全屏模式样式 */
+:fullscreen {
+    background-color: inherit;
+}
+
+:-webkit-full-screen {
+    background-color: inherit;
+}
+
+:-moz-full-screen {
+    background-color: inherit;
+}
+
+/* 其他原有样式保持不变... */
+/* 注意：此处应包含您之前提供的所有CSS内容，为节省空间未重复显示 */

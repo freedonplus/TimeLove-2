@@ -24,7 +24,9 @@
        <div id="fireworksContainer"></div>
        
        <!-- 加载遮罩 -->
-       <div id="loadingOverlay"></div>
+       <div id="loadingOverlay">
+		   <div class="loading-spinner"></div>
+	   </div>
        
        <!-- 设置面板 -->
        <div id="settingsPanel">
@@ -76,12 +78,19 @@
                    <h4>主题</h4>
                    <button id="toggleDarkMode">切换暗色模式</button>
                    <button id="toggleSeason">切换季节</button>
+                   <button id="toggleFullscreen">进入全屏</button>
                </div>
            </div>
        </div>
        
        <!-- 设置按钮 -->
        <button id="settingsButton">⚙️</button>
+
+       <!-- 嵌入的iframe -->
+       <div class="iframe-container">
+           <iframe width="100%" height="300" src="https://www.jyshare.com/iframe/9095" 
+                   allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+       </div>
 
     <script src="js/index.js"></script>
 </body>

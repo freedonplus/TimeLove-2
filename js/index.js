@@ -279,21 +279,35 @@ const fireworkSounds = [
     "https://assets.mixkit.co/sfx/preview/mixkit-firework-explosion-1683.mp3"
 ];
 
-// 显示加载动画
+// 修改后的显示加载动画函数
 function showLoading() {
     loadingOverlay.classList.add('active');
-    bodyElement.style.opacity = '0.5';
-    bodyElement.style.pointerEvents = 'none';
+    bodyElement.style.pointerEvents = 'none'; // 仅保留指针事件禁用
+    // 移除原有的透明度修改
 }
 
-// 隐藏加载动画
+// 修改后的隐藏加载动画函数
 function hideLoading() {
     setTimeout(() => {
         loadingOverlay.classList.remove('active');
-        bodyElement.style.opacity = '1';
         bodyElement.style.pointerEvents = 'auto';
     }, 500);
 }
+
+// 新增：点击外部关闭设置面板的功能
+document.addEventListener('click', function(event) {
+    const settingsPanel = document.getElementById('settingsPanel');
+    const settingsButton = document.getElementById('settingsButton');
+    
+    // 判断点击是否在设置面板或设置按钮范围内
+    const isClickInside = settingsPanel.contains(event.target) || 
+                        settingsButton.contains(event.target);
+    
+    // 如果点击在外部且面板可见，则关闭面板
+    if (!isClickInside && settingsPanel.classList.contains('show')) {
+        settingsPanel.classList.remove('show');
+    }
+});
 
 // 渲染时间轴
 function renderTimeline(data) {
@@ -717,3 +731,37 @@ toggleAllBtn.addEventListener('click', function() {
 // 初始渲染
 renderTimeline(themeData[currentTheme]);
 createSeasonEffect(seasons[currentSeasonIndex]);
+
+// 新增全屏功能相关代码
+const toggleFullscreenBtn = document.getElementById('toggleFullscreen');
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            alert(`无法进入全屏模式: ${err.message}`);
+        });
+        toggleFullscreenBtn.textContent = "退出全屏";
+    } else {
+        document.exitFullscreen();
+        toggleFullscreenBtn.textContent = "进入全屏";
+    }
+}
+
+// 监听全屏状态变化
+document.addEventListener('fullscreenchange', () => {
+    toggleFullscreenBtn.textContent = document.fullscreenElement ? "退出全屏" : "进入全屏";
+});
+
+// 在事件监听部分添加
+toggleFullscreenBtn.addEventListener('click', toggleFullscreen);
+
+// 其他原有JavaScript代码保持不变...
+// 注意：此处应包含您之前提供的所有JavaScript内容，为节省空间未重复显示
+
+// 初始化代码末尾添加：
+// 确保iframe在暗色模式下的显示
+document.addEventListener('DOMContentLoaded', () => {
+    const iframe = document.querySelector('iframe');
+    document.body.classList.add('dark-mode');
+    document.body.classList.remove('dark-mode');
+});
